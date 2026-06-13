@@ -1,0 +1,14 @@
+/target/
+/.venv/
+/venv/
+ENV/
+*.bin
+*.swap
+benchmark_swap_file.bin
+python_swap.bin
+.envs/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Cargo.lock
