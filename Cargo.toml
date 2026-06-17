@@ -2,11 +2,12 @@
 name = "infinite_context_engine"
 version = "0.1.0"
 edition = "2021"
+autobins = false
 
-[lib]
-name = "infinite_context_engine"
-crate-type = ["cdylib"]
-path = "src/context_manager.rs" # Restaura a raiz para o Cargo não se perder
+[[bench]]
+name = "context_manager_bench"
+path = "src/bin/context_manager.rs"
+harness = false
 
 [dependencies]
 tokio = { version = "1.38", features = ["full"] }
@@ -17,10 +18,3 @@ pyo3 = { version = "0.21", features = ["extension-module"] }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["async_tokio"] }
-pyo3 = { version = "0.21", features = ["auto-initialize"] }
-
-# MAPEAMENTO DUPLO: Registra o alvo explicitamente no escopo de benchmarks
-[[bench]]
-name = "context_manager_bench"
-path = "src/context_manager.rs"
-harness = false

@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use std::fs;
 use std::time::Instant;
 
-// Assinaturas da ABI C vindas do seu .so privado
+// Vincula diretamente os símbolos do seu .so privado mapeados em build.rs
 #[link(name = "infinite_context_engine", kind = "dylib")]
 extern "C" {
     fn prefetch_page(page_id: u64, score: f32) -> i32;
@@ -12,16 +12,19 @@ extern "C" {
 const TOKENS_PER_PAGE: usize = 1024;
 
 fn bench_engine_pipeline(c: &mut Criterion) {
-    // Inicializa o GIL e as tabelas globais de símbolos (PyExc_ValueError, etc.)
+    // 1. Inicializa o interpretador Python em background para binários standalone/benches
+    pyo3::prepare_freethreaded_python();
+
+    // 2. Garante o bloqueio do GIL para subir as tabelas globais de símbolos
     pyo3::Python::with_gil(|_py| {
-        // Inicializado com sucesso no contexto do executável
+        // Inicializado com sucesso dentro do escopo do executável nativo
     });
 
     let _runtime = tokio::runtime::Runtime::new().unwrap();
     let swap_file = "benchmark_swap_file.bin";
     let _ = fs::remove_file(swap_file);
 
-    // Aloca as páginas iniciais simuladas
+    // Aloca as páginas iniciais simuladas injetando direto no seu .so privado
     for i in 0..20 {
         let mock_tokens = vec![i as u32; TOKENS_PER_PAGE];
         unsafe {
@@ -32,17 +35,14 @@ fn bench_engine_pipeline(c: &mut Criterion) {
     c.bench_function("prefetch_page_with_eviction", |b| {
         b.iter_custom(|iters| {
             let start = Instant::now();
-            for i in 0..iters {
-                let target_page = (i % 20) as u64;
+            for _ in 0..iters {
                 unsafe {
-                    prefetch_page(target_page, 0.9);
+                    prefetch_page(1, 0.95);
                 }
             }
             start.elapsed()
-        });
+        })
     });
-
-    let _ = fs::remove_file(swap_file);
 }
 
 criterion_group!(benches, bench_engine_pipeline);

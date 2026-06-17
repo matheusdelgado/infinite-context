@@ -12,3 +12,4 @@ python_swap.bin
 *.swp
 .DS_Store
 Cargo.lock
+infinite_context_engine.so
